@@ -1,0 +1,42 @@
+NAME: FNU SHIVA SANDESH
+EMAIL: sandesh.shiva362@gmail.com
+ID: 111111111
+Project 1B - Summer 2017 - CS 111
+
+Key files:
+    1. lab1b-server.c : Consistr bascically the code that was written in the 
+       first part of the lab. The only addition was addition of the socket 
+       and changing the file dirrectors to appropriate pipe then input and 
+       output to and from the shell. The major success was the correct output 
+       of the commands redirected to the client.
+ 
+    2. lab1b-client.c : This was the major code that was to be written from the
+       scratch. This included the implementing the socket code and also the 
+       encryption and decryption using mcrypt.  This was one of the most 
+       challenging part of the assignment.
+ 
+    3. Makefile: For building the executables, cleaning the files after 
+       execution and creating the tar ball. 
+
+    4. my.key: Contains the encryption key for encrypting the trasmission
+       between the server and client.
+ 
+Major Obstacle : Understanding the vrious API's especially the socket and also
+      the encryption libraries.Various layers of abstraction
+      make it little easier to digest. 
+
+Limitations: Works well on local host but it would be difficult to work on 
+	     other host. Also implementing long command would be difficult. 
+	     Also receiving the packages from server might not be of equal 
+	     length.
+	     The only limitaitons is that the poll timeout will be an 
+	     influential factor in determining the amount of the data that
+	     was read from a file descriptor an trasfering the data over 
+	     the socket. The timout will have non-trivial influnce on how
+	     the log file look like.
+Citations:
+	1.. Linux manpages for all the API's such as socket(), bind(), connect(
+           server, atexit(), poll() and other I/O services.
+       2. http://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/socket.html
+       3. http://www.geeksforgeeks.org/sprintf-in-c/
+       4. http://www.binarytides.com/socket-programming-c-linux-tutorial/

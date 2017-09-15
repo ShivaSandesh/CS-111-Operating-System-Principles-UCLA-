@@ -1,0 +1,198 @@
+ROUTINE ====================== busy_Worker in /u/cs/ugrad/sandesh/CS111/Project2B/lab2_list.c
+  1214   1452 Total samples (flat / cumulative)
+     .      .   85:     fprintf(stderr, "Error: Failed to allocate memmory for sub lists. %s \n", strerror(errno));
+     .      .   86:     exit(1); 
+     .      .   87:   }
+     .      .   88:   return;
+     .      .   89: }
+---
+     .      .   90: void * busy_Worker(void * val){
+     .      .   91:   long long tid = (*((long long *) val));
+     .      .   92:   long long begin  = (*(long long *)val) * num_Iterates;
+     .      .   93:   struct timespec start_time;
+     .      .   94:   struct timespec end_time;
+     .      .   95:   long long lock_Gettime;
+     .      .   96:   long long i;
+     .      .   97:   // INSERT
+     .      .   98:   for( i = begin; i < begin + num_Iterates; i++){
+     .      .   99:     SortedListElement_t * node = elems[i];
+     .      .  100:     long long nlist = ((long long) (elems[i]->key))%num_Lists;
+     .      .  101:     clock_gettime(CLOCK_MONOTONIC, &start_time);
+     .      .  102:     if(sync_Opt == 'm') 
+     .      .  103:       pthread_mutex_lock(&(mutex_Array[nlist]));
+     .      .  104:     if(sync_Opt == 's') 
+   579    579  105:       while(__sync_lock_test_and_set(&(spinlock_Array[nlist]), 1));
+     .      1  106:     clock_gettime(CLOCK_MONOTONIC, &end_time);
+     .      .  107: 
+     .    132  108:     SortedList_insert(&(sub_Lists[nlist]), node);
+     .      .  109: 
+     .      .  110:     if(sync_Opt == 's') 
+     .      .  111:       __sync_lock_release(&(spinlock_Array[nlist]));
+     .      .  112:     if(sync_Opt == 'm')
+     .      .  113:       pthread_mutex_unlock(&(mutex_Array[nlist]));
+     .      .  114:     
+     .      .  115:     lock_Gettime  = end_time.tv_nsec - start_time.tv_nsec;
+     .      .  116:     lock_Gettime +=  (end_time.tv_sec - start_time.tv_sec)*BILLION;  
+     .      .  117:     lock_Timer[tid] += lock_Gettime;
+     .      .  118:   }
+     .      .  119:   
+     .      .  120:   for(i = 0; i < num_Lists; i++){
+     .      .  121:     clock_gettime(CLOCK_MONOTONIC, &start_time);
+     .      .  122:     if(sync_Opt == 'm')
+     .      .  123:       pthread_mutex_lock(&(mutex_Array[i]));
+     .      .  124:     if(sync_Opt == 's') 
+     .      .  125:       while(__sync_lock_test_and_set(&(spinlock_Array[i]), 1));
+     .      .  126:     
+     .      .  127:     clock_gettime(CLOCK_MONOTONIC, &end_time);
+     .      .  128:     
+     .      1  129:     if(SortedList_length(&(sub_Lists[i])) < 0){
+     .      .  130:       fprintf(stderr, "List is Corrupted: Length mismatch.\n");
+     .      .  131:       exit(2);
+     .      .  132:     }
+     .      .  133: 
+     .      .  134:     if(sync_Opt == 's')
+     .      .  135:       __sync_lock_release(&(spinlock_Array[i]));
+     .      .  136:     if(sync_Opt == 'm') 
+     .      .  137:       pthread_mutex_unlock(&(mutex_Array[i]));
+     .      .  138:     
+     .      .  139:     lock_Gettime  = end_time.tv_nsec - start_time.tv_nsec;
+     .      .  140:     lock_Gettime += BILLION * (end_time.tv_sec - start_time.tv_sec);  
+     .      .  141:     lock_Timer[tid] += lock_Gettime;
+     .      .  142:   }
+     .      .  143:   // DELETE
+     .      .  144:   SortedListElement_t * to_Remove;
+     .      .  145:   for( i = begin ; i < num_Iterates + begin; i++){
+     .      .  146:     clock_gettime(CLOCK_MONOTONIC, &start_time);
+     .      .  147:     long long nlist = ((long long) (elems[i]->key))%num_Lists;
+     .      .  148:     if(sync_Opt == 'm') 
+     .      .  149:       pthread_mutex_lock(&(mutex_Array[nlist]));
+     .      .  150:     if(sync_Opt == 's') 
+   635    635  151:       while(__sync_lock_test_and_set(&(spinlock_Array[nlist]), 1));
+     .      .  152:     clock_gettime(CLOCK_MONOTONIC, &end_time);
+     .      .  153: 
+     .    104  154:     to_Remove = SortedList_lookup(&(sub_Lists[nlist]), elems[i]->key);
+     .      .  155:     if(to_Remove == NULL){
+     .      .  156:       fprintf(stderr, "List is Corrupted. Missing Element.\n");
+     .      .  157:       exit(2);
+     .      .  158:     }
+     .      .  159:     if(SortedList_delete(to_Remove)){
+     .      .  160:       fprintf(stderr, " Function SortedList_delete() Failed !\n");
+     .      .  161:       exit(2);
+     .      .  162:     }
+     .      .  163:     
+     .      .  164:     if(sync_Opt == 's')
+     .      .  165:       __sync_lock_release(&(spinlock_Array[nlist]));
+     .      .  166:     if(sync_Opt == 'm') 
+     .      .  167:       pthread_mutex_unlock(&(mutex_Array[nlist]));
+     .      .  168:     
+     .      .  169:     lock_Gettime += BILLION * (end_time.tv_sec - start_time.tv_sec); 
+     .      .  170:     lock_Gettime  = end_time.tv_nsec - start_time.tv_nsec;
+     .      .  171:     lock_Timer[tid] += lock_Gettime;
+     .      .  172:   }
+     .      .  173:   return NULL;
+     .      .  174: }
+---
+     .      .  175: 
+     .      .  176: int main(int argc, char* argv[]) {
+     .      .  177:   int ch;
+     .      .  178:   int opt_Index = 0;
+     .      .  179:   char* yield_Opts;
+ROUTINE ====================== busy_Worker in /u/cs/ugrad/sandesh/CS111/Project2B/lab2_list.c
+  1214   1452 Total samples (flat / cumulative)
+     .      .   85:     fprintf(stderr, "Error: Failed to allocate memmory for sub lists. %s \n", strerror(errno));
+     .      .   86:     exit(1); 
+     .      .   87:   }
+     .      .   88:   return;
+     .      .   89: }
+---
+     .      .   90: void * busy_Worker(void * val){
+     .      .   91:   long long tid = (*((long long *) val));
+     .      .   92:   long long begin  = (*(long long *)val) * num_Iterates;
+     .      .   93:   struct timespec start_time;
+     .      .   94:   struct timespec end_time;
+     .      .   95:   long long lock_Gettime;
+     .      .   96:   long long i;
+     .      .   97:   // INSERT
+     .      .   98:   for( i = begin; i < begin + num_Iterates; i++){
+     .      .   99:     SortedListElement_t * node = elems[i];
+     .      .  100:     long long nlist = ((long long) (elems[i]->key))%num_Lists;
+     .      .  101:     clock_gettime(CLOCK_MONOTONIC, &start_time);
+     .      .  102:     if(sync_Opt == 'm') 
+     .      .  103:       pthread_mutex_lock(&(mutex_Array[nlist]));
+     .      .  104:     if(sync_Opt == 's') 
+   579    579  105:       while(__sync_lock_test_and_set(&(spinlock_Array[nlist]), 1));
+     .      1  106:     clock_gettime(CLOCK_MONOTONIC, &end_time);
+     .      .  107: 
+     .    132  108:     SortedList_insert(&(sub_Lists[nlist]), node);
+     .      .  109: 
+     .      .  110:     if(sync_Opt == 's') 
+     .      .  111:       __sync_lock_release(&(spinlock_Array[nlist]));
+     .      .  112:     if(sync_Opt == 'm')
+     .      .  113:       pthread_mutex_unlock(&(mutex_Array[nlist]));
+     .      .  114:     
+     .      .  115:     lock_Gettime  = end_time.tv_nsec - start_time.tv_nsec;
+     .      .  116:     lock_Gettime +=  (end_time.tv_sec - start_time.tv_sec)*BILLION;  
+     .      .  117:     lock_Timer[tid] += lock_Gettime;
+     .      .  118:   }
+     .      .  119:   
+     .      .  120:   for(i = 0; i < num_Lists; i++){
+     .      .  121:     clock_gettime(CLOCK_MONOTONIC, &start_time);
+     .      .  122:     if(sync_Opt == 'm')
+     .      .  123:       pthread_mutex_lock(&(mutex_Array[i]));
+     .      .  124:     if(sync_Opt == 's') 
+     .      .  125:       while(__sync_lock_test_and_set(&(spinlock_Array[i]), 1));
+     .      .  126:     
+     .      .  127:     clock_gettime(CLOCK_MONOTONIC, &end_time);
+     .      .  128:     
+     .      1  129:     if(SortedList_length(&(sub_Lists[i])) < 0){
+     .      .  130:       fprintf(stderr, "List is Corrupted: Length mismatch.\n");
+     .      .  131:       exit(2);
+     .      .  132:     }
+     .      .  133: 
+     .      .  134:     if(sync_Opt == 's')
+     .      .  135:       __sync_lock_release(&(spinlock_Array[i]));
+     .      .  136:     if(sync_Opt == 'm') 
+     .      .  137:       pthread_mutex_unlock(&(mutex_Array[i]));
+     .      .  138:     
+     .      .  139:     lock_Gettime  = end_time.tv_nsec - start_time.tv_nsec;
+     .      .  140:     lock_Gettime += BILLION * (end_time.tv_sec - start_time.tv_sec);  
+     .      .  141:     lock_Timer[tid] += lock_Gettime;
+     .      .  142:   }
+     .      .  143:   // DELETE
+     .      .  144:   SortedListElement_t * to_Remove;
+     .      .  145:   for( i = begin ; i < num_Iterates + begin; i++){
+     .      .  146:     clock_gettime(CLOCK_MONOTONIC, &start_time);
+     .      .  147:     long long nlist = ((long long) (elems[i]->key))%num_Lists;
+     .      .  148:     if(sync_Opt == 'm') 
+     .      .  149:       pthread_mutex_lock(&(mutex_Array[nlist]));
+     .      .  150:     if(sync_Opt == 's') 
+   635    635  151:       while(__sync_lock_test_and_set(&(spinlock_Array[nlist]), 1));
+     .      .  152:     clock_gettime(CLOCK_MONOTONIC, &end_time);
+     .      .  153: 
+     .    104  154:     to_Remove = SortedList_lookup(&(sub_Lists[nlist]), elems[i]->key);
+     .      .  155:     if(to_Remove == NULL){
+     .      .  156:       fprintf(stderr, "List is Corrupted. Missing Element.\n");
+     .      .  157:       exit(2);
+     .      .  158:     }
+     .      .  159:     if(SortedList_delete(to_Remove)){
+     .      .  160:       fprintf(stderr, " Function SortedList_delete() Failed !\n");
+     .      .  161:       exit(2);
+     .      .  162:     }
+     .      .  163:     
+     .      .  164:     if(sync_Opt == 's')
+     .      .  165:       __sync_lock_release(&(spinlock_Array[nlist]));
+     .      .  166:     if(sync_Opt == 'm') 
+     .      .  167:       pthread_mutex_unlock(&(mutex_Array[nlist]));
+     .      .  168:     
+     .      .  169:     lock_Gettime += BILLION * (end_time.tv_sec - start_time.tv_sec); 
+     .      .  170:     lock_Gettime  = end_time.tv_nsec - start_time.tv_nsec;
+     .      .  171:     lock_Timer[tid] += lock_Gettime;
+     .      .  172:   }
+     .      .  173:   return NULL;
+     .      .  174: }
+---
+     .      .  175: 
+     .      .  176: int main(int argc, char* argv[]) {
+     .      .  177:   int ch;
+     .      .  178:   int opt_Index = 0;
+     .      .  179:   char* yield_Opts;

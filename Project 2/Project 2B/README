@@ -1,0 +1,153 @@
+NAME: FNU SHIVA SANDESH
+EMAIL: SANDESH.SHIVA362@GMAIL.COM
+ID : 111111111
+
+Descritption of Files:
+1.SortedList.h - a header file containing interfaces for linked list operations.
+2.SortedList.c the source for a C source module that, implements insert, delete
+  lookup, and length methods for a sorted doubly linked list (described in the 
+  provided header file, including correct placement of pthread_yield calls). 
+3.  Makefile to build the deliverable programs, output, graphs, and tarball
+    Targets include tests, profile, graphs, dist and clean 
+4.lab2b_list.csv - containing your results for all of test runs.
+5.profile.out - execution profiling report showing where time was spent in 
+  the un-partitioned spin-lock implementation with the --list option
+6. Graphs : 5 graphs that were required by the assignment
+7. csv_geenrate.sh : bash script containing all the required tests.
+8. README
+9. proff.out: Profiler breakdown without using the --list option to 
+   analyze a speciffic method.
+
+Without synchronization it takes roughly 16 threads to rougly fail the test.
+
+Answers to the questions:
+QUESTION 2.3.1 - Cycles in the basic list implementation: 
+Where do you believe most of the cycles are spent in the 1 and 2-thread list 
+      tests ? 
+Answer: For the 1 and 2 threaded list most of the time is spent while 
+	insertion and deletion. Insertions in this case involves the
+	comparison of keys. Morever, the comparison of the keys is 
+	involves a library call which makes it expensive.  
+
+Why do you believe these to be the most expensive parts of the code? 
+Answer: The reason for this is as I mentioned earlier, the inserions
+	to a sorteed lineked list involves comaprison of the keys 
+	and since I am using a library call for the same it would add
+	significant overhead to it. For the deletion we have to first lookup
+	individual key prior to the deletion which also adds some overhead.
+
+Where do you believe most of the time/cycles are being spent in the high-thread
+       spin-lock tests? 
+Answer: For spin lock case, as we know that spin-lock is notorious for the wasting
+	the CPU cycles because it actually executes the commands to check if the
+	lock has been freed or not. Thus, for the spin lock case a lot of overhead
+	is incurred by spinnig however with increased number of threads you are doing
+	more insertions and deletions to the list. This also adds additional time
+	however spinning takes more cycles  
+
+Where do you believe most of the time/cycles are being spent in the high-thread
+       mutex tests? 
+Answer: For the higer number of threads, considering that the number of
+        iterations are fixed, in my understanding additional threads would add
+        some overhead to the timing however, the influence of the actions of
+        insertions and deletions are significant. Insertion is actually more
+        expensive then deletion for say. Since we have increased number of
+	elements in list we should expect a higher total time. IN case of 
+	mutex the time for waiting on the locks is not added to the total time
+	but with incresed number of thread the number of operations are increased.
+
+QUESTION 2.3.2 - Execution Profiling: 
+Where (what lines of code) are consuming most of the cycles when the spin-lock
+       version of the list exerciser is run with a large number of threads? 
+Answer: Here is the output from  the profile.out 
+623    623  103:       while(__sync_lock_test_and_set(&(spinlock_Array[nlist]), 1));
+Now out of all the 1239 samples this line of the code consumes excessively 
+large number of the cycle. Now this is not a shocking becasuse the spinock 
+actually executes the lines of the code while waiting on the lock. This adds 
+a significant addition to the total time. In gerenral the busy_worker consumes
+roughly 67% of the time as visible in proff.out. Here is the output without --list 
+Total: 415 samples
+     278  67.0%  67.0%      415 100.0% busy_Worker
+      95  22.9%  89.9%       95  22.9% __strcmp_sse42
+      23   5.5%  95.4%       70  16.9% SortedList_lookup
+      15   3.6%  99.0%       65  15.7% SortedList_insert
+       2   0.5%  99.5%        2   0.5% _init
+       1   0.2%  99.8%        1   0.2% 0x00007fff1c995988
+       1   0.2% 100.0%        2   0.5% __clock_gettime
+       0   0.0% 100.0%      415 100.0% __clone
+       0   0.0% 100.0%      415 100.0% start_thread
+
+
+Why does this operation become so expensive with large numbers of threads? 
+Answer: With larger number of threads there are larger number of threads that
+	are waiting on the lock to be freed so that it can be used. Now in case
+	of spin lock as we know that it is actually burning the CPU cycles 
+	as it checks for the locks to be freed. Now this have an additional 
+	effect as well becasue running instructions on the core implies that 
+	that CPU core is not free to be used. Thus, a spin lock might be leading 
+	to the problem of taking the essential CPU time for other thread to 
+	actually run so that it can free the thread. 
+
+QUESTION 2.3.3 - Mutex Wait Time:
+Look at the average time per operation (vs # threads) and the average 
+     wait-for-mutex time (vs #threads). 
+Why does the average lock-wait time rise so dramatically with the number of
+     contending threads?
+Answer: Now this is intitutive that with increased number of threads, the
+	number of threads that are waiting for the lock to be free is increaed.
+	Also,  If the mutex is currently unlocked, it becomes locked and owned
+	by the calling thread, and pthread_mutex_lock returns immediately. If
+        the mutex is already locked by another thread, pthread_mutex_lock suspends
+	the calling thread until the mutex is unlocked. Now this suspension adds
+	an overhead.
+
+Why does the completion time per operation rise (less dramatically) with the
+     number of contending threads?
+Answer: With increased number of thread the number of contenting threads is 
+	increased. With increased number of threads, the number of elements that
+	needs to be inserted are aslo increased, assuming the number of iterations
+	is same. Now this overhead will be less as compared to the lock acquiring 
+	time in this case. Now, with increased number of threads the number of the 
+	context switches will also increase. This will result incresed time but
+	less dramtic though. 
+
+How is it possible for the wait time per operation to go up faster (or higher)
+     than the completion time per operation?
+Answer: Mutex is different from the spin lock thus, unlike spinlock it does not
+	waste an extremely large number of the CPU cycles checking if the lock
+	is available. However if the lock is not available it simply waits rather
+	than checking cotinously. Now while a threads is waiting another thread 
+	may get the lock when free thus increasing the wait time. This does not 
+	have any effect on the execution time. 
+
+QUESTION 2.3.4 - Performance of Partitioned Lists 
+Explain the change in performance of the synchronized methods as a function of
+	 the number of lists.
+Answer: The drop in the throughput with increased number of the threads is
+	less dramatic and slope is not as steep as we saw in the case without
+	partitioning the resources. Now this is an improvement. TWe saw that 
+	graph levels at a timing such that after that the increased number of the
+	threads did not drop the throughput as we saw in the first part of the 
+	lab.
+
+Should the throughput continue increasing as the number of lists is further increased? 
+       If not, explain why not.
+Answer: It would not definitely increase with icreased number of the resources. With 
+	excessive partitioing the overhead of the context swtching will over pwer the
+	timing calculations. This would not be true metric of performance then. Now it
+	is visible from the graph that the change in performance with icreased number of
+	threads is less dramtic as progressively the number of threads increses.
+
+It seems reasonable to suggest the throughput of an N-way partitioned list should
+    be equivalent to the throughput of a single list with fewer (1/N) threads. 
+    Does this appear to be true in the above curves? If not, explain why not. 
+Answer: Although it is good generalization however, the curve does not strictly seems to suggest this
+	the performance does not strictly follow this. As visible from the grph that the performnce 
+	does not strictly follow that path but rather have few differences. Although a good way to
+	approximate but it is not true. 
+
+Citations:
+1. https://sourceware.org/pthreads-win32/manual/pthread_mutex_init.html
+2. Random key generator adapted from following:
+   https://stackoverflow.com/questions/15767691/whats-the-c-library-function-to-generate-random-string
+3. 

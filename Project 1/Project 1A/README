@@ -1,0 +1,39 @@
+NAME: FNU SHIVA SANDESH
+EMAIL: sandesh.shiva362@gmailc.om
+ID: 111111111
+
+Number of hours spent 10-15 hours.
+Files as the part of project :-
+      1. laba1.c
+      2. Makefile
+      3. README
+
+Major obstcales in the project.
+      1. This project was consideraly harder than the last one and required
+         extensive research. The research was basically to understand the usage
+         of a particualr API along with the set of things that would go along
+         with it. For example the pthread create() method required an additional
+         method to be declared "worker" which will work on a particular thread.
+         Although all of the infornmation was readily available in the Linux man
+         page however, I did had to look up the examples of pollfd(3) online for
+         better understanding. Those pages have been cited in ciations section.
+      2. Another major obstacle devisng the testing methology for this project.
+
+Files:
+       1. lab1.c : The most confusing part of the lab was keeping knowing what
+          events can cuase the program to exit successful as there are number of
+          events that depnd upon one another. The polling()function was the
+          hardest method to understand and use.
+       2. Makefile: Makefile for this assignment was pretty straight forward as it
+          did not required the check section as most of the checking could not
+          be accoplished without actually running the commands.
+
+Citations:
+        1.Creating pipe in C : http://tldp.org/LDP/lpg/node11.html
+        2. Polling: http://beej.us/guide/bgnet/output/html/multipage/pollman.html.
+        3. waipid(): https://linux.die.net/man/2/waitpid.
+        4. http://www.linux-mag.com/id/357/.
+        5. https://stackoverflow.com/questions/5638321/
+           why-child-process-returns-exit-status-32512-in-unix.
+        6. Linux man page for atexit(), signal(), pipe().
+

@@ -1,0 +1,60 @@
+NAME: FNU SHIVA SANDESH
+EMAIL: sandesh.shiva362@gmail.com
+ID: 1111111111
+
+A description of the included files:
+1.lab0.c :
+          The code is divided into four major sections/ steps as directed in the
+          description of the project. These four sections/steps include :
+          STEP 1: Process all arguments and store the results in variables.This
+          is to process all the arguments passed while running the code. This is
+          done to have all the information required to process those arguments
+          such as the names of the input and output files is that optional
+          argument is used.
+
+          STEP 2: Do any file redirection. Now if the input and output are
+          directed from and a file, then this operation is carried out.
+          If any of the files do not exist or cannot be created then an error
+          is thrown.
+
+          STEP 3: Register the signal handler and cause the segfault. For this
+          I have declared a handler method called sighandler(). This where the
+          fprintf is used to print the error message.
+
+          STEP 4: If no segfault was caused, copy stdin to stdout. At this we
+          are sure that the segmentation fault is not caused thus, it is safe
+          to copy the standard input to the standard output.
+
+2. Makefile:
+         The smoke-test cases in the check target include various possible 
+	 configuration of the options to the program. 
+	 These include: 
+	 ./lab0 --input=file --output=out 
+	 After running this making sure the exist status is correct along 
+	 with the contents of the files.
+	 ./lab0 --input=file  <-- to ensure --input is supported
+	 		      	  checked for the exist status for 
+				  the correctness of the output.
+	 ./labo --output=out <----- file with 'write' permission (console).
+	 ./lab0 --output=file <----- file with no write permission.
+	 ./lab0 --input=file --output=out --segfault --catch 
+	 	To ensure that catch functionality works fine with a fault.
+	 ./lab0 --segfault --catch 
+	 ./lab0 --not_an_option 2> /dev/null <-- to ensure only required
+	 			   	     	 options are supported. 
+3. backtrace.png : shows a segfault and associated stack-trace using the gdb.
+   breakpoint.png : shows a breakpoint and variable inspection that caused the
+                    segmentation fault.
+
+4. Limitations : There are two limitatios of this implementation.
+   	       	 1. Buffer size is fixed and this might lead to a large overhead
+		 while copying the STDIN to STDOUT if the size of the STDIN is 
+		 large.
+		 2. If the name of the input and the output file is same then
+		 the program will generate an empty file because the input file
+		 will be over-wriiten by the file of same name as the argument 
+		 to the output options. Thus, it is an irrecoverable flaw. 
+Citations:
+        1. https://linux.die.net/man/3/getopt_long
+        2. http://www.alexonlinux.com/how-to-handle-sigsegv-but-also-generate-core-dump.
+        3. Pages from the linux ‘man’ help.
